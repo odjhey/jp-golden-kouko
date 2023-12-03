@@ -33,7 +33,10 @@ function App() {
         onSubmit={handleSubmit(async (d) => {
           console.log('---', { d })
           const rawSubs = await d.files[0].text()
-          console.log(groupChunk(rawSubs))
+          const grouped = groupChunk(rawSubs)
+          console.log(grouped)
+
+          setSubs(grouped)
         })}
       >
         <input type="file" className="input" {...register('files')}></input>
@@ -45,7 +48,11 @@ function App() {
       <div>
         Subs
         {subs.map((sub) => {
-          return <div></div>
+          return (
+            <div key={sub.num}>
+              {sub.num} {sub.values.join()}
+            </div>
+          )
         })}
       </div>
     </div>
