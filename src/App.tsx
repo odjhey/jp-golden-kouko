@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import { useForm } from 'react-hook-form'
+import { SubLine } from './components/SubLine'
 
 type Sub = {
   num: number
@@ -40,10 +41,8 @@ function App() {
     <div>
       <form
         onSubmit={handleSubmit(async (d) => {
-          console.log('---', { d })
           const rawSubs = await d.files[0].text()
           const grouped = groupChunk(rawSubs)
-          console.log(grouped)
 
           setSubs(grouped)
         })}
@@ -63,24 +62,31 @@ function App() {
           aria-label="subs"
           defaultChecked
         />
-        <div role="tabpanel" className="tab-content">
+        <div role="tabpanel" className="tab-content p-2">
           {subs.map((sub) => {
             return (
-              <div key={sub.num}>
-                {sub.num} {sub.time} {sub.values.join('\n')}{' '}
+              <div key={sub.num} className="flex gap-2 items-center">
                 <button
                   type="button"
-                  className="btn btn-xs btn-accent"
+                  className="btn btn-xs btn-primary"
                   onClick={() => {
                     setTags((p) => [...p, { name: 'mine', num: sub.num }])
                   }}
                 >
                   t
                 </button>
+                <SubLine
+                  num={sub.num}
+                  time={sub.time}
+                  content={sub.values.join('\n')}
+                ></SubLine>
                 {tags
                   .filter((t) => t.num === sub.num)
                   .map((t) => (
-                    <div key={`${t.name}+${t.num}`} className="badge">
+                    <div
+                      key={`${t.name}+${t.num}`}
+                      className="badge badge-accent"
+                    >
                       {t.name}
                     </div>
                   ))}
@@ -96,13 +102,17 @@ function App() {
           className="tab"
           aria-label="mined"
         />
-        <div role="tabpanel" className="tab-content">
+        <div role="tabpanel" className="tab-content p-2">
           {tags.map((t) => {
             const match = subs.find((s) => s.num === t.num)
             if (!match) return null
             return (
-              <div key={`${t.name}+${t.num}`} className="badge">
-                {match.num} {match.time} {match.values}
+              <div key={`${t.name}+${t.num}`}>
+                <SubLine
+                  num={match.num}
+                  time={match.time}
+                  content={match.values.join('\n')}
+                ></SubLine>
               </div>
             )
           })}
