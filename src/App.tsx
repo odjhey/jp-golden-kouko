@@ -2,20 +2,8 @@ import { useState } from 'react'
 import './App.css'
 import { useForm } from 'react-hook-form'
 import { SubLine } from './components/SubLine'
-
-type Sub = {
-  num: number
-  time: string
-  values: string[]
-}
-type Subs = Sub[]
-
-type Tag = {
-  num: number
-  name: string
-}
-
-type Tags = Tag[]
+import { Subs, Tags } from './types/types'
+import { useUi } from './hooks/use-ui'
 
 const groupChunk = (text: string): Subs => {
   return text
@@ -37,14 +25,23 @@ function App() {
   const [subs, setSubs] = useState<Subs>([])
   const [tags, setTags] = useState<Tags>([])
 
+  const { loading, ui } = useUi()
+
+  if (loading) {
+    return <div>...loading</div>
+  }
+
+  console.log('--ui', { ui })
+
   return (
-    <div>
+    <div className="mt-1">
       <form
         onSubmit={handleSubmit(async (d) => {
           const rawSubs = await d.files[0].text()
           const grouped = groupChunk(rawSubs)
 
           setSubs(grouped)
+          ui.addSub({ id: 'first', title: d.files[0].name, values: grouped })
         })}
       >
         <input type="file" className="input" {...register('files')}></input>
@@ -63,7 +60,7 @@ function App() {
           defaultChecked
         />
         <div role="tabpanel" className="tab-content p-2">
-          {subs.map((sub) => {
+          {ui.subs().map((sub) => {
             return (
               <div key={sub.num} className="flex gap-2 items-center">
                 <button
