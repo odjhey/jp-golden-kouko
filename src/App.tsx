@@ -1,9 +1,9 @@
-import { useState } from 'react'
 import './App.css'
 import { useForm } from 'react-hook-form'
 import { SubLine } from './components/SubLine'
-import { Subs, Tags } from './types/types'
 import { useUi } from './hooks/use-ui'
+import { Subs } from './types/types'
+import { observer } from 'mobx-react'
 
 const groupChunk = (text: string): Subs => {
   return text
@@ -13,25 +13,20 @@ const groupChunk = (text: string): Subs => {
       const blockLines = block.split('\n')
       const num = parseInt(blockLines[0], 10)
       const time = blockLines[1]
-      const values = blockLines.slice(2)
-      return { num, time, values }
+      const contents = blockLines.slice(2)
+      return { num, time, contents }
     })
     .filter((b) => !isNaN(b.num))
 }
 
-function App() {
+const App = observer(() => {
   const { handleSubmit, register } = useForm<{ files: File[] }>()
-
-  const [subs, setSubs] = useState<Subs>([])
-  const [tags, setTags] = useState<Tags>([])
 
   const { loading, ui } = useUi()
 
   if (loading) {
     return <div>...loading</div>
   }
-
-  console.log('--ui', { ui })
 
   return (
     <div className="mt-1">
@@ -40,8 +35,11 @@ function App() {
           const rawSubs = await d.files[0].text()
           const grouped = groupChunk(rawSubs)
 
-          setSubs(grouped)
-          ui.addSub({ id: 'first', title: d.files[0].name, values: grouped })
+          ui.addSub({
+            id: 'first',
+            title: d.files[0].name,
+            subEntries: grouped,
+          })
         })}
       >
         <input type="file" className="input" {...register('files')}></input>
@@ -67,7 +65,11 @@ function App() {
                   type="button"
                   className="btn btn-xs btn-primary"
                   onClick={() => {
-                    setTags((p) => [...p, { name: 'mine', num: sub.num }])
+                    ui.mine({
+                      num: sub.num,
+                      time: sub.time,
+                      contents: sub.contents.map((v) => v),
+                    })
                   }}
                 >
                   t
@@ -75,18 +77,16 @@ function App() {
                 <SubLine
                   num={sub.num}
                   time={sub.time}
-                  content={sub.values.join('\n')}
+                  content={sub.contents.join('\n')}
                 ></SubLine>
-                {tags
-                  .filter((t) => t.num === sub.num)
-                  .map((t) => (
-                    <div
-                      key={`${t.name}+${t.num}`}
-                      className="badge badge-accent"
-                    >
-                      {t.name}
-                    </div>
-                  ))}
+                {sub.tags.map((t) => (
+                  <div
+                    key={`${t.name}+${sub.num}`}
+                    className="badge badge-accent"
+                  >
+                    {t.name}
+                  </div>
+                ))}
               </div>
             )
           })}
@@ -100,15 +100,13 @@ function App() {
           aria-label="mined"
         />
         <div role="tabpanel" className="tab-content p-2">
-          {tags.map((t) => {
-            const match = subs.find((s) => s.num === t.num)
-            if (!match) return null
+          {ui.tags().map((t) => {
             return (
               <div key={`${t.name}+${t.num}`}>
                 <SubLine
-                  num={match.num}
-                  time={match.time}
-                  content={match.values.join('\n')}
+                  num={t.num}
+                  time={t.time}
+                  content={t.contents.join('\n')}
                 ></SubLine>
               </div>
             )
@@ -117,6 +115,6 @@ function App() {
       </div>
     </div>
   )
-}
+})
 
 export default App
