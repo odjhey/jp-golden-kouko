@@ -14,6 +14,7 @@ const Sub = types.model('Sub', {
 const Tag = types.model('Tag', {
   // NOTES: after some consideration, lets try to use own copy of subEntry, instead of a reference
   subEntry: SubEntry,
+  subId: types.string,
   name: types.string,
 })
 
@@ -25,9 +26,14 @@ export const State = types
   })
   .actions((self) => {
     return {
-      mine: (subEntry: { num: number; time: string; contents: string[] }) => {
+      mine: (params: {
+        subId: string
+        subEntry: { num: number; time: string; contents: string[] }
+      }) => {
+        const { subEntry, subId } = params
         self.tags.push({
           name: 'mine',
+          subId: subId,
           subEntry: {
             num: subEntry.num,
             time: subEntry.time,
@@ -48,19 +54,27 @@ export const State = types
 export const Ui = types
   .model('Ui', {
     stateRef: types.reference(State),
+    activeSub: types.maybeNull(types.reference(Sub)),
   })
   .views((self) => {
     return {
       subs: () => {
-        const match = self.stateRef.subs[0]
+        const match = self.activeSub
         if (!match) {
-          return []
+          return { subId: '', title: '', subEntries: [] }
         }
-        return match.subEntries.map((v) => ({
+        const subEntries = match.subEntries.map((v) => ({
           ...v,
-          // TODO: consider subs id
-          tags: self.stateRef.tags.filter((t) => v.num === t.subEntry.num),
+          tags: self.stateRef.tags.filter(
+            (t) => v.num === t.subEntry.num && match.id === t.subId,
+          ),
         }))
+
+        return {
+          subId: match.id,
+          title: match.title,
+          subEntries,
+        }
       },
       tags: () => {
         return self.stateRef.tags.map((t) => ({ ...t.subEntry, name: t.name }))
@@ -69,6 +83,14 @@ export const Ui = types
   })
   .actions((self) => {
     return {
+      loadSub: (id: string) => {
+        const match = self.stateRef.subs.find((s) => s.id === id)
+        console.log({ id, match })
+        if (!match) {
+          return
+        }
+        self.activeSub = match
+      },
       addSub: (sub: {
         id: string
         title: string
@@ -76,8 +98,11 @@ export const Ui = types
       }) => {
         self.stateRef.addSub(sub)
       },
-      mine: (subEntry: { num: number; time: string; contents: string[] }) => {
-        self.stateRef.mine(subEntry)
+      mine: (params: {
+        subId: string
+        subEntry: { num: number; time: string; contents: string[] }
+      }) => {
+        self.stateRef.mine(params)
       },
     }
   })
