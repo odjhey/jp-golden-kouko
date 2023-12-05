@@ -13,7 +13,8 @@ export const setup = async (
   }, Promise.resolve(store))
 }
 
-const ROOTSTORE_KEY = 'rootStore-asdfj1'
+// version up when the model have breaking changes
+const ROOTSTORE_KEY = 'rootStore-kinkou-v0'
 export const loadFromStorage: StoreMiddleware = async (store) => {
   await localforage.getItem(ROOTSTORE_KEY).then((snap) => {
     if (snap) {

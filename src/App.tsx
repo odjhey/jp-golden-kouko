@@ -20,7 +20,12 @@ const groupChunk = (text: string): Subs => {
 }
 
 const App = observer(() => {
-  const { handleSubmit, register } = useForm<{ files: File[] }>()
+  const {
+    handleSubmit,
+    register,
+    formState: { errors },
+  } = useForm<{ title: string; files: File[] }>()
+  const loadFormMethods = useForm<{ id: string }>()
 
   const { loading, ui } = useUi()
 
@@ -36,15 +41,45 @@ const App = observer(() => {
           const grouped = groupChunk(rawSubs)
 
           ui.addSub({
-            id: 'first',
+            id: d.title,
             title: d.files[0].name,
             subEntries: grouped,
           })
         })}
       >
-        <input type="file" className="input" {...register('files')}></input>
-        <button type="submit" className="btn">
+        <input
+          type="text"
+          className="input input-bordered input-xs"
+          {...register('title', { required: true })}
+        ></input>
+        {errors.title && <span>{errors.title.type}</span>}
+        <input
+          type="file"
+          className="input input-bordered input-xs"
+          {...register('files', { required: true })}
+        ></input>
+        {errors.files && <span>{errors.files.type}</span>}
+
+        <button type="submit" className="btn btn-xs">
           Submit
+        </button>
+      </form>
+
+      <form
+        onSubmit={loadFormMethods.handleSubmit(async (d) => {
+          ui.loadSub(d.id)
+        })}
+      >
+        <input
+          type="text"
+          className="input input-bordered input-xs"
+          {...loadFormMethods.register('id', { required: true })}
+        ></input>
+        {loadFormMethods.formState.errors.id && (
+          <span>{loadFormMethods.formState.errors.id.type}</span>
+        )}
+        <button type="submit" className="btn btn-xs">
+          Load
         </button>
       </form>
 
@@ -58,7 +93,7 @@ const App = observer(() => {
           defaultChecked
         />
         <div role="tabpanel" className="tab-content p-2">
-          {ui.subs().map((sub) => {
+          {ui.subs().subEntries.map((sub) => {
             return (
               <div key={sub.num} className="flex gap-2 items-center">
                 <button
@@ -66,9 +101,12 @@ const App = observer(() => {
                   className="btn btn-xs btn-primary"
                   onClick={() => {
                     ui.mine({
-                      num: sub.num,
-                      time: sub.time,
-                      contents: sub.contents.map((v) => v),
+                      subId: ui.subs().subId,
+                      subEntry: {
+                        num: sub.num,
+                        time: sub.time,
+                        contents: sub.contents.map((v) => v),
+                      },
                     })
                   }}
                 >
