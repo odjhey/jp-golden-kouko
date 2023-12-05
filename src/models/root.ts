@@ -85,7 +85,6 @@ export const Ui = types
     return {
       loadSub: (id: string) => {
         const match = self.stateRef.subs.find((s) => s.id === id)
-        console.log({ id, match })
         if (!match) {
           return
         }
